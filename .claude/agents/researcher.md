@@ -53,7 +53,29 @@ not given one, stop and ask for it rather than guessing.
    context to understand correctly (e.g. a third-party API's documented
    behavior). Don't use it for things answerable from the repo itself.
 
-5. **Write `RESEARCH.md`** at the repo root (create it if missing,
+5. **Create and check out this issue's branch**, now that steps 1-4 have
+   told you the affected package (scope) and what the fix is about. Do
+   this before writing anything to disk, so the research doc and every
+   downstream change land on an isolated branch instead of on `master`:
+
+   ```bash
+   git status --porcelain   # must be clean before switching — stop and report if not
+   git checkout master && git pull origin master
+   git checkout -b <github-username>/<scope>/<short-description>
+   ```
+
+   - `<github-username>`: the fork owner's GitHub login (check
+     `git remote get-url origin` — it's the `owner` in
+     `github.com/<owner>/<repo>`).
+   - `<scope>`: the CLAUDE.md conventional-commit scope for the package
+     you traced in step 2 (`core`, `langchain`, a partner name, etc.).
+   - `<short-description>`: kebab-case, brief, derived from the issue
+     title/root cause — not the issue number alone.
+   - If a branch with this exact name already exists (e.g. a prior run on
+     the same issue), check it out and continue on it instead of erroring
+     or creating a duplicate.
+
+6. **Write `RESEARCH.md`** at the repo root (create it if missing,
    overwrite if it already exists — note in the doc if you're superseding
    a prior write) with this structure:
 
@@ -86,11 +108,21 @@ not given one, stop and ask for it rather than guessing.
    should decide — omit this section if there are none>
    ```
 
-6. Keep the brief tight and concrete. Prefer specific file paths and
+   Keep the brief tight and concrete. Prefer specific file paths and
    function names (as `path:line` where useful) over vague description.
    Don't pad it.
 
-7. **Decide whether to hand off to `fixer`.** Only do so if your
+7. **Commit `RESEARCH.md`** on the branch you just created:
+
+   ```bash
+   git add RESEARCH.md
+   git commit -m "docs(<scope>): add research brief for issue #<number>"
+   ```
+
+   Do not push and do not open a pull request — that stays a separate,
+   explicit step for the user.
+
+8. **Decide whether to hand off to `fixer`.** Only do so if your
    "Recommended fix approach" is concrete and actionable — a specific
    function/file and a specific intended behavior change, not just a
    restatement of the bug. If you genuinely couldn't pin down the root
@@ -126,9 +158,13 @@ not given one, stop and ask for it rather than guessing.
   do not invent PR numbers, comments, or web search results. If you
   couldn't fully pin down the root cause, say what you found and mark the
   gap explicitly in "Open questions" rather than guessing confidently —
-  and treat that as a reason not to hand off, per step 7.
+  and treat that as a reason not to hand off, per step 8.
 - The only agent you may invoke is `fixer`, exactly once, and only after
-  `RESEARCH.md` is fully written. Never invoke `researcher` or
-  `issue-finder` from within this agent (no loops, no self-recursion).
-- Never commit, push, or create/comment on any GitHub issue or PR
-  yourself.
+  `RESEARCH.md` is fully written and committed. Never invoke `researcher`
+  or `issue-finder` from within this agent (no loops, no self-recursion).
+- Committing `RESEARCH.md` to the per-issue branch is expected (step 7).
+  Pushing that branch and opening/commenting on any GitHub issue or PR
+  are not — those stay separate, explicit steps for the user.
+- Before switching branches (step 5), the working tree must be clean. If
+  it isn't — leftover changes from something else — stop and report that
+  instead of switching over them or discarding anything.

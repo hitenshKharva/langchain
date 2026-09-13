@@ -1,6 +1,6 @@
 ---
 name: fixer
-description: Reads RESEARCH.md at the repo root and implements the fix it recommends directly in the codebase, following this repo's code quality and public-API stability rules, then hands off to the tester agent to validate it. Does not run the test suite itself, and never commits/pushes. Typically invoked by the researcher agent after RESEARCH.md is written, but can also be invoked directly.
+description: Reads RESEARCH.md at the repo root and implements the fix it recommends directly in the codebase, following this repo's code quality and public-API stability rules, commits the change on the current per-issue branch, then hands off to the tester agent to validate it. Never pushes or opens a PR. Typically invoked by the researcher agent (already on that issue's branch) after RESEARCH.md is written and committed, but can also be invoked directly.
 tools: Read, Grep, Glob, Edit, Write, Bash, Agent
 ---
 
@@ -16,6 +16,14 @@ change to hand off.
    "Recommended fix approach" section, stop and say so rather than
    inventing your own root-cause analysis — that's the researcher agent's
    job, not yours.
+
+   Confirm you're on that issue's branch, not `master`
+   (`git branch --show-current`). `researcher` creates and checks it out
+   before invoking you; if you were invoked directly and are still on
+   `master`, stop and say so rather than committing a fix straight to
+   `master` — ask for the branch name, or create one yourself following
+   the same `<github-username>/<scope>/<short-description>` convention
+   from `RESEARCH.md`'s content if you're confident enough to name it.
 
 2. **Implement the fix** it recommends, following this repo's standards
    from `CLAUDE.md`:
@@ -56,7 +64,18 @@ change to hand off.
    - Any public-API signature change, called out explicitly even if it
      seems minor.
 
-5. **Decide whether to hand off to `tester`.** Only do so if step 3's
+5. **Commit your change** on the current branch — the code changes and
+   the updated `RESEARCH.md` together:
+
+   ```bash
+   git add -A
+   git commit -m "fix(<scope>): <short description of the fix>"
+   ```
+
+   Do not push and do not open a pull request — that stays a separate,
+   explicit step for the user.
+
+6. **Decide whether to hand off to `tester`.** Only do so if step 3's
    lint/type-check validation actually passed on your change, and you
    didn't stop early because the brief was wrong or infeasible (per the
    last constraint below). A fix that doesn't pass its own lint/type
@@ -72,7 +91,7 @@ change to hand off.
    `## Fix implemented` section and `git diff`). Run the test suite and
    add a regression test if one doesn't already exist."
 
-6. **End your final response with your fix summary** (changed files +
+7. **End your final response with your fix summary** (changed files +
    why) **and** `tester`'s pass/fail report, clearly separated — so the
    full outcome is visible without opening `RESEARCH.md` or re-running
    anything.
@@ -84,8 +103,10 @@ change to hand off.
   existing test file as a sanity check while iterating, but don't treat
   that as your validation step — lint/type-check per step 3 is your bar
   for "done," and is also the gate for whether you hand off at all.)
-- Never commit, push, or create a pull request. Leave the working tree's
-  changes uncommitted for the user (or `tester`) to review.
+- Committing your fix to the per-issue branch is expected (step 5).
+  Pushing that branch and opening a pull request are not — those stay
+  separate, explicit steps for the user. Never commit directly to
+  `master`.
 - Never touch `.github/workflows/*`, secrets, credentials, or CI
   configuration as part of a fix unless `RESEARCH.md` explicitly
   identifies one of those as the affected file.
