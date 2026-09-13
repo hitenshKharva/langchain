@@ -1,5 +1,7 @@
 .vs/
-.claude/
+.claude/*
+!.claude/agents/
+!.claude/agents/*.md
 .idea/
 #Emacs backup
 *~
